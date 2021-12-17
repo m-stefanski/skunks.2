@@ -1,0 +1,170 @@
+<!DOCTYPE HTML>
+<html manifest = "cache.manifest">
+  <head>
+    <title>Skunks</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" href="style.css" media="screen"/>
+    <link rel="icon" type="image/png" size="32x32" href="favicon.png" />
+    <link rel="apple-touch-icon" href="favicon.png" />
+  </head>  
+  <body>
+    <div class='error' id='error' style="display: none;">Connection with Skunks is lost</div>
+    <div class="header">
+      <img src="skunk.svg" />
+      <h1>kunks</h1><sup>BETA2</sup>
+    </div>
+    <div class="section">
+      <div class="accordion">Air</div>
+      <div class="panel">
+        <table>
+          <tr>
+            <td>Temperature</td>
+            <td class="value"><span id="temp">-</span></td>
+          </tr>
+          <tr>
+            <td>Humidity</td>
+            <td class="value"><span id="humid">-</span></td>
+          </tr>
+          <tr>
+            <td>Pressure</td>
+            <td class="value"><span id="pres">-</span></td>
+          </tr>
+          <tr>
+            <td>PM<sub>2.5</sub></td>
+            <td class="value"><span id="pm25">-</span></td>
+          </tr>
+          <tr>
+            <td>PM<sub>10</sub></td>
+            <td class="value"><span id="pm10">-</span></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <div class="section">
+      <div class="accordion">Device</div>
+      <div class="panel">
+        <table>
+          <tr>
+            <td>Battery</td>
+            <td class="value"><span id="voltage">-</span></td>
+          </tr>
+          <tr>
+            <td>Uptime</td>
+            <td class="value"><span id="uptime">-</span></td>
+          </tr>
+          <tr>
+            <td>Last update</td>
+            <td class="value"><span id="status">-</span></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <div class="section">
+      <div class="accordion">Settings</div>
+      <div class="panel">
+        <form>
+          <table>
+            <tr>
+              <tr>
+                <td>Network type</td>
+                <td>
+                  <select id="net_type" name="net_type">
+                    <option value="ap">Host own network</option>
+                    <option value="wlan">Join existing WLAN</option>
+                  </select>
+                </td>
+              </tr>
+              <td>WLAN SSID</td>
+              <td>
+                <select id="cust_ssid" name="ssid">
+                  <option value="-">-</option>
+                </select>
+                <div class="value" id="own_ssid">Skunks</div>
+              </td>
+            </tr>
+            <tr>
+              <td>WLAN Password</td>
+              <td>
+                <input type="password" id="cust_pass" maxlength="63">
+                <div class="value" id="own_pass">(none)</div>
+              </td>
+            </tr>
+            <tr>
+              <td></td>
+              <td><button type="submit">Save settings</td>
+            </tr>
+          </table>
+
+        </form>
+    </div>
+  </body>
+  <script>
+  function pad_00(num){
+    return("00"  + num).slice(-2);
+  }
+
+  function returnElapsedTime(epoch) {
+    var days = epoch / (3600 * 1000 * 24),
+        hours = (days % 1) * 24,
+        minutes = (hours % 1) * 60,
+        seconds = (minutes % 1) * 60;
+    return Math.floor(days) + "d, "  + pad_00(Math.floor(hours)) + ":" + pad_00(Math.floor(minutes)) + ":" + pad_00(Math.round(seconds));
+  }
+
+  function reload_data () {
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function(){
+      if (xhr.readyState === 4){
+        var params = JSON.parse(xhr.responseText);
+        document.getElementById('temp').innerHTML = params.temperature.toFixed(1) + "&#176;C";
+        document.getElementById('humid').innerHTML = params.humidity.toFixed(1) + "%";
+        document.getElementById('pres').innerHTML = params.pressure.toFixed(1) + " hPa";
+        document.getElementById('pm25').innerHTML = params.pm25.toFixed(1) + "  &#181;g/m<sup>3</sup>";
+        document.getElementById('pm10').innerHTML = params.pm10.toFixed(1) + "  &#181;g/m<sup>3</sup>";
+        document.getElementById('voltage').innerHTML = params.voltage.toFixed(2) + " V";
+        document.getElementById('uptime').innerHTML = returnElapsedTime(params.uptime);
+        var now = new Date();
+        document.getElementById('status').innerHTML = now.toTimeString();
+        document.getElementById('error').style.display = "none";
+      }
+    };
+    xhr.onerror = function () {
+      document.getElementById('error').style.display = "block";
+    };
+    xhr.open('GET', '/sensors/');
+    xhr.send();
+  }
+  setInterval(reload_data, 1000*2);
+
+  document.getElementById("net_type").addEventListener("change", function() {
+    if (this.value == "ap") {
+      var cust = "none";
+      var own = "";
+    } else {
+      var cust = "";
+      var own = "none";
+    }
+    document.getElementById("cust_ssid").style.display = cust;
+    document.getElementById("cust_pass").style.display = cust;
+    document.getElementById("own_ssid").style.display = own;
+    document.getElementById("own_pass").style.display = own;
+  });
+
+  var acc = document.getElementsByClassName("accordion");
+  var i;
+
+  for (i = 0; i < acc.length; i++) {
+    acc[i].addEventListener("click", function() {
+      this.classList.toggle("active");
+      var panel = this.nextElementSibling;
+      if (panel.style.display === "block") {
+        panel.style.display = "none";
+      } else {
+        panel.style.display = "block";
+      }
+    });
+  }
+  acc[0].click();
+  </script>
+</html>
