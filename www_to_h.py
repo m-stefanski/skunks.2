@@ -1,7 +1,9 @@
 import os
 
-input_dir = 'src/www'
+input_dir = 'src_www'
 output_dir = 'include/www_h'
+
+print(f"Converting {input_dir} to {output_dir}")
 
 for root, dirs, files in os.walk(input_dir):
     for file in files:
